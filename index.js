@@ -10,10 +10,10 @@ const readline = require('readline');
 const { Boom } = require('@hapi/boom');
 const chalk = require('chalk');
 
-// --- PENGATURAN TAMPILAN ---
-const horror = (text) => chalk.red.bold(text);
-const neon = (text) => chalk.green.bright(text);
-const cyber = (text) => chalk.cyan.bold(text);
+// --- PERBAIKAN WARNA AGAR TIDAK ERROR ---
+const horror = (text) => chalk.red(text);
+const neon = (text) => chalk.green(text);
+const cyber = (text) => chalk.cyan(text);
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (text) => new Promise((resolve) => rl.question(text, resolve));
@@ -46,7 +46,7 @@ async function startBot() {
         const phoneNumber = await question(neon('Enter Number (628xxx): '));
         const code = await sock.requestPairingCode(phoneNumber.trim());
         console.log(cyber("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        console.log(chalk.yellow(`\n[!] SLCODE ACCESS: `) + chalk.white.bgRed.bold(` ${code} `));
+        console.log(chalk.yellow(`\n[!] ACCESS CODE: `) + chalk.white.bgRed.bold(` ${code} `));
         console.log(cyber("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
     }
 
@@ -63,8 +63,7 @@ async function startBot() {
         // LOG SIGNAL (PESAN MASUK)
         console.log(chalk.gray(`[${new Date().toLocaleTimeString()}] `) + neon(`SIGNAL: `) + chalk.white(`${pushName} -> `) + chalk.yellow(body));
 
-        // --- AUTO READ SUDAH DIHAPUS ---
-        // Pesan tidak akan centang biru otomatis meskipun bot aktif.
+        // --- AUTO READ SUDAH DIHAPUS (TIDAK AKAN CENTANG BIRU) ---
 
         if (body === '.r') {
             const quotedMsg = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -84,7 +83,7 @@ async function startBot() {
                         buffer = Buffer.concat([buffer, chunk]);
                     }
 
-                    const resultText = `*BYPASS SUCCESSFUL BY SLCODE*`;
+                    const resultText = `*BYPASS SUCCESSFUL*`;
                     
                     if (mediaType === 'imageMessage') {
                         await sock.sendMessage(remoteJid, { image: buffer, caption: resultText }, { quoted: m });
@@ -93,7 +92,7 @@ async function startBot() {
                     }
                     console.log(neon(`[✔] SUCCESS!`));
                 } catch (e) {
-                    console.log(horror(`[✘] EXTRACTION FAILED!`));
+                    console.log(horror(`[✘] ERROR!`));
                 }
             }
         }
@@ -106,7 +105,7 @@ async function startBot() {
             console.log(horror(`\n[!] CONNECTION LOST. RECONNECTING...`));
             if (reason !== DisconnectReason.loggedOut) startBot();
         } else if (connection === 'open') {
-            console.log(neon(`\n[⚡] SLCODE ONLINE. NO AUTO-READ ACTIVE.\n`));
+            console.log(neon(`\n[⚡] SLCODE ONLINE. NO AUTO-READ.\n`));
         }
     });
 }
