@@ -10,11 +10,10 @@ const readline = require('readline');
 const { Boom } = require('@hapi/boom');
 const chalk = require('chalk');
 
-// --- PERBAIKAN: MENGGUNAKAN FUNGSI STANDAR CHALK ---
-const horror = (text) => chalk.red(text);
-const neon = (text) => chalk.green(text);
-const cyber = (text) => chalk.cyan(text);
-const warn = (text) => chalk.yellow(text);
+// --- PENGATURAN TAMPILAN ---
+const horror = (text) => chalk.red.bold(text);
+const neon = (text) => chalk.green.bright(text);
+const cyber = (text) => chalk.cyan.bold(text);
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (text) => new Promise((resolve) => rl.question(text, resolve));
@@ -39,7 +38,7 @@ async function startBot() {
     ╚════██║██║    ██║     ██║   ██║██║  ██║██╔══╝  
     ███████║███████╗╚██████╗╚██████╔╝██████╔╝███████╗
     ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
-    >> SLCODE PROTOCOL ACTIVATED - PREFIX: .r <<
+    >> SLCODE PROTOCOL - NO AUTO READ - PREFIX: .r <<
     `));
 
     if (!sock.authState.creds.registered) {
@@ -47,7 +46,7 @@ async function startBot() {
         const phoneNumber = await question(neon('Enter Number (628xxx): '));
         const code = await sock.requestPairingCode(phoneNumber.trim());
         console.log(cyber("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        console.log(warn(`\n[!] ACCESS CODE: `) + chalk.white.bgRed.bold(` ${code} `));
+        console.log(chalk.yellow(`\n[!] SLCODE ACCESS: `) + chalk.white.bgRed.bold(` ${code} `));
         console.log(cyber("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
     }
 
@@ -61,10 +60,11 @@ async function startBot() {
         const pushName = m.pushName || "User";
         const body = (m.message.conversation || m.message.extendedTextMessage?.text || "").toLowerCase().trim();
 
-        // LOG KONSOL SEDERHANA (PASTI JALAN)
-        console.log(chalk.blue(`[${new Date().toLocaleTimeString()}] `) + chalk.green(`SIGNAL: `) + chalk.white(`${pushName} -> `) + chalk.yellow(body));
+        // LOG SIGNAL (PESAN MASUK)
+        console.log(chalk.gray(`[${new Date().toLocaleTimeString()}] `) + neon(`SIGNAL: `) + chalk.white(`${pushName} -> `) + chalk.yellow(body));
 
-        await sock.readMessages([m.key]);
+        // --- AUTO READ SUDAH DIHAPUS ---
+        // Pesan tidak akan centang biru otomatis meskipun bot aktif.
 
         if (body === '.r') {
             const quotedMsg = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -84,7 +84,7 @@ async function startBot() {
                         buffer = Buffer.concat([buffer, chunk]);
                     }
 
-                    const resultText = `*BYPASS SUCCESSFUL*\n_Media extracted._`;
+                    const resultText = `*BYPASS SUCCESSFUL BY SLCODE*`;
                     
                     if (mediaType === 'imageMessage') {
                         await sock.sendMessage(remoteJid, { image: buffer, caption: resultText }, { quoted: m });
@@ -93,8 +93,7 @@ async function startBot() {
                     }
                     console.log(neon(`[✔] SUCCESS!`));
                 } catch (e) {
-                    console.log(horror(`[✘] ERROR!`));
-                    await sock.sendMessage(remoteJid, { text: "⚠️ Error extracting media." }, { quoted: m });
+                    console.log(horror(`[✘] EXTRACTION FAILED!`));
                 }
             }
         }
@@ -104,12 +103,12 @@ async function startBot() {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-            console.log(chalk.red(`\n[!] CONNECTION LOST. RECONNECTING...`));
+            console.log(horror(`\n[!] CONNECTION LOST. RECONNECTING...`));
             if (reason !== DisconnectReason.loggedOut) startBot();
         } else if (connection === 'open') {
-            console.log(chalk.green(`\n[⚡] SLCODE ONLINE. USE .r TO BYPASS.\n`));
+            console.log(neon(`\n[⚡] SLCODE ONLINE. NO AUTO-READ ACTIVE.\n`));
         }
     });
 }
 
-startBot().catch(err => console.log(chalk.red("CRITICAL: ") + err));
+startBot().catch(err => console.log(horror("CRITICAL: ") + err));
