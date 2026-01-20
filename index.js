@@ -10,10 +10,16 @@ const readline = require('readline');
 const { Boom } = require('@hapi/boom');
 const chalk = require('chalk');
 
-// --- PERBAIKAN WARNA AGAR TIDAK ERROR ---
-const horror = (text) => chalk.red(text);
-const neon = (text) => chalk.green(text);
-const cyber = (text) => chalk.cyan(text);
+/**
+ * SLCODE PROTOCOL - FIXED VERSION
+ * Fitur: Bypass RVO (.r)
+ * Status Auto-Read: OFF (Centang biru mati)
+ */
+
+// Perbaikan fungsi warna agar tidak TypeError
+const horror = (text) => chalk.red ? chalk.red.bold(text) : text;
+const neon = (text) => chalk.green ? chalk.green(text) : text;
+const cyber = (text) => chalk.cyan ? chalk.cyan.bold(text) : text;
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (text) => new Promise((resolve) => rl.question(text, resolve));
@@ -41,12 +47,13 @@ async function startBot() {
     >> SLCODE PROTOCOL - NO AUTO READ - PREFIX: .r <<
     `));
 
+    // Proses Pairing jika belum tertaut
     if (!sock.authState.creds.registered) {
         console.log(cyber("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        const phoneNumber = await question(neon('Enter Number (628xxx): '));
+        const phoneNumber = await question(neon('Masukkan Nomor WA (contoh 628xxx): '));
         const code = await sock.requestPairingCode(phoneNumber.trim());
         console.log(cyber("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        console.log(chalk.yellow(`\n[!] ACCESS CODE: `) + chalk.white.bgRed.bold(` ${code} `));
+        console.log(chalk.yellow(`\n[!] SLCODE ACCESS CODE: `) + chalk.white.bgRed.bold(` ${code} `));
         console.log(cyber("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
     }
 
@@ -60,14 +67,15 @@ async function startBot() {
         const pushName = m.pushName || "User";
         const body = (m.message.conversation || m.message.extendedTextMessage?.text || "").toLowerCase().trim();
 
-        // LOG SIGNAL (PESAN MASUK)
+        // Tampilkan log pesan masuk di terminal
         console.log(chalk.gray(`[${new Date().toLocaleTimeString()}] `) + neon(`SIGNAL: `) + chalk.white(`${pushName} -> `) + chalk.yellow(body));
 
-        // --- AUTO READ SUDAH DIHAPUS (TIDAK AKAN CENTANG BIRU) ---
+        // --- FITUR AUTO READ DINONAKTIFKAN ---
+        // await sock.readMessages([m.key]); // Baris ini sengaja dihilangkan
 
         if (body === '.r') {
             const quotedMsg = m.message.extendedTextMessage?.contextInfo?.quotedMessage;
-            if (!quotedMsg) return sock.sendMessage(remoteJid, { text: "❌ Reply target with *.r*" }, { quoted: m });
+            if (!quotedMsg) return sock.sendMessage(remoteJid, { text: "❌ Balas (Reply) pesan Sekali Lihat dengan *.r*" }, { quoted: m });
 
             const viewOnce = quotedMsg.viewOnceMessageV2 || quotedMsg.viewOnceMessage || quotedMsg.viewOnceMessageV2Extension;
             const actualMessage = viewOnce ? viewOnce.message : quotedMsg;
@@ -76,23 +84,23 @@ async function startBot() {
             if (viewOnce || mediaType === 'imageMessage' || mediaType === 'videoMessage') {
                 const media = actualMessage[mediaType];
                 try {
-                    console.log(horror(`[!] BYPASSING: `) + cyber(remoteJid));
+                    console.log(horror(`[!] EXTRACTING MEDIA FROM: `) + cyber(remoteJid));
                     const stream = await downloadContentFromMessage(media, mediaType.replace('Message', ''));
                     let buffer = Buffer.from([]);
                     for await (const chunk of stream) {
                         buffer = Buffer.concat([buffer, chunk]);
                     }
 
-                    const resultText = `*BYPASS SUCCESSFUL*`;
+                    const resultCaption = `*BYPASS SUCCESSFUL BY SLCODE*`;
                     
                     if (mediaType === 'imageMessage') {
-                        await sock.sendMessage(remoteJid, { image: buffer, caption: resultText }, { quoted: m });
+                        await sock.sendMessage(remoteJid, { image: buffer, caption: resultCaption }, { quoted: m });
                     } else if (mediaType === 'videoMessage') {
-                        await sock.sendMessage(remoteJid, { video: buffer, caption: resultText }, { quoted: m });
+                        await sock.sendMessage(remoteJid, { video: buffer, caption: resultCaption }, { quoted: m });
                     }
-                    console.log(neon(`[✔] SUCCESS!`));
+                    console.log(neon(`[✔] MEDIA Berhasil Terkirim!`));
                 } catch (e) {
-                    console.log(horror(`[✘] ERROR!`));
+                    console.log(horror(`[✘] Gagal Mengambil Media: ` + e.message));
                 }
             }
         }
@@ -102,12 +110,12 @@ async function startBot() {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-            console.log(horror(`\n[!] CONNECTION LOST. RECONNECTING...`));
+            console.log(horror(`\n[!] KONEKSI TERPUTUS. RECONNECTING...`));
             if (reason !== DisconnectReason.loggedOut) startBot();
         } else if (connection === 'open') {
-            console.log(neon(`\n[⚡] SLCODE ONLINE. NO AUTO-READ.\n`));
+            console.log(neon(`\n[⚡] SLCODE PROTOCOL ONLINE. AUTO-READ: OFF.\n`));
         }
     });
 }
 
-startBot().catch(err => console.log(horror("CRITICAL: ") + err));
+startBot().catch(err => console.log(chalk.red("CRITICAL ERROR: ") + err));
