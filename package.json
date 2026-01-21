@@ -1,0 +1,16 @@
+{
+  "name": "slcode-bot-v20",
+  "version": "1.0.0",
+  "description": "WhatsApp Bot Bypass RVO Node 20",
+  "main": "index.js",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.6.0",
+    "@hapi/boom": "^10.0.1",
+    "pino": "^8.19.0",
+    "chalk": "^4.1.2",
+    "readline": "^1.3.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
